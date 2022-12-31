@@ -1,0 +1,15 @@
+ALTER VIEW [dbo].[view_speedEvents_carMode]
+AS
+SELECT     TOP 100 PERCENT dbo.device_data.evb2, dbo.device_data.evb3, dbo.device_data.evb9, dbo.device_data.evb10, 
+dbo.device_data.date, 
+                      dbo.car.name AS car_name, dbo.car.rej_numb, dbo.driver.id_driver, dbo.road_imp_div.imp_div, dbo.car.fast_imp, 
+					  dbo.device_data.id_device_data, 
+                      dbo.driver.driver_name
+FROM         dbo.device_data INNER JOIN
+                      dbo.car ON dbo.device_data.evb2 = dbo.car.id_car INNER JOIN
+                      dbo.road_imp_div ON dbo.car.id_road_imp_div = dbo.road_imp_div.id_road_imp_div LEFT OUTER JOIN
+                      dbo.car_change ON dbo.car.id_car = dbo.car_change.id_car AND dbo.device_data.date >= dbo.car_change.start_date AND 
+                      (dbo.device_data.date <= dbo.car_change.end_date OR
+                      dbo.car_change.end_date IS NULL) LEFT OUTER JOIN
+                      dbo.driver ON dbo.car_change.id_driver = dbo.driver.id_driver
+WHERE     (dbo.device_data.evb3 IN (50, 51, 57, 58))

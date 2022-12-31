@@ -1,0 +1,74 @@
+
+ALTER procedure [dbo].[device_data2] 
+  @id_car int, 
+  @kod_zdarzenia int, 
+  @start datetime, 
+  @stop datetime 
+as 
+	create table #stan_pojazdu 
+	( 
+		id int not null identity(1, 1), 
+		from_ datetime not null, 
+		to_ datetime not null, 
+		zalaczony_silnik int not null, 
+		primary key (id) 
+	) 
+ 
+	declare @start2 datetime; 
+	declare @stop2 datetime; 
+	set @start2 = DATEADD(month, -1, @start) 
+	set @stop2 = DATEADD(month, 1, @stop) 
+ 
+	declare @evb3 int 
+	declare @date datetime 
+	declare @evb3_prior int 
+	declare @date_prior datetime 
+ 
+	set @evb3_prior = 0; 
+ 
+	declare cr cursor for 
+	select t1.evb3, t1.date from device_data t1 
+	where t1.evb2 = @id_car and t1.date >= @start2 and t1.date <= @stop2 
+		and (evb3 = 10 or evb3 = 49 or evb3 = 15) 
+	order by t1.id_device_data 
+	open cr; 
+	fetch cr into @evb3, @date 
+  while (@@fetch_status <> -1) 
+  begin 
+		if @evb3_prior <> 0 
+		begin 
+			if (@evb3_prior = 10) and ((@evb3 = 49) or (@evb3 = 15)) 
+			begin 
+				insert into #stan_pojazdu (from_, to_, zalaczony_silnik) 
+					values(@date_prior, @date, 1); 
+			end 
+		end; 
+		set @evb3_prior = @evb3; 
+		set @date_prior = @date; 
+		fetch cr into @evb3, @date 
+  end 
+  close cr 
+  deallocate cr 
+  if @evb3 = 10 
+  begin 
+	 insert into #stan_pojazdu (from_, to_, zalaczony_silnik) 
+	    values(@date, GETDATE(), 1); 
+  end 
+ 
+ if @kod_zdarzenia <> 38 
+ begin 
+	select t1.*, isnull(t2.zalaczony_silnik, 0) zalaczony_silnik from device_data t1 
+		left join #stan_pojazdu t2 on (t2.from_ <= t1.date and t2.to_ >= t1.date) 
+	where t1.evb2 = @id_car and t1.date >= @start and t1.date <= @stop and evb3 = @kod_zdarzenia 
+	order by t1.id_device_data 
+ end 
+ else 
+ begin 
+	select t1.evb3, t1.evb1, t1.evb4, t1.evb5, t1.evb6, t1.evb7, t1.evb8, t1.evb9, t1.evb10, isnull(t2.zalaczony_silnik, 0) zalaczony_silnik, count(*) ile_razy, min(date) date from device_data t1 
+		left join #stan_pojazdu t2 on (t2.from_ <= t1.date and t2.to_ >= t1.date) 
+	where t1.evb2 = @id_car and t1.date >= @start and t1.date <= @stop and evb3 = @kod_zdarzenia and evb1 = 65 and t2.zalaczony_silnik = 1 
+	group by t1.evb3, t1.evb1, t1.evb4, t1.evb5, t1.evb6, t1.evb7, t1.evb8, t1.evb9, t1.evb10, isnull(t2.zalaczony_silnik, 0) 
+	having count(*) > 1 
+	order by min(date) 
+ end 
+

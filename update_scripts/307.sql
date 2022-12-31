@@ -1,0 +1,1 @@
+alter table car add mpal_start datetime

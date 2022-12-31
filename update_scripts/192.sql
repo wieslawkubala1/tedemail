@@ -1,0 +1,31 @@
+ALTER FUNCTION [dbo].[event_15_start_time] 
+(
+	@car_id tinyint,		-- Id pojazdu
+	@id_device_data bigint,	-- id zdarzenia
+	@event_stop datetime	-- Czas zakonczenia zdarzenia
+--	@evb1 tinyint,			-- Bajty zdarzenia wymagane do obliczen
+--	@evb4 tinyint, 
+--	@evb9 tinyint, 
+--	@evb10 tinyint
+)
+RETURNS  datetime
+AS
+BEGIN
+	declare @earlier_do_15 datetime;
+	declare @event_start datetime;
+	
+	-- Jako czas rozpoczecia okresu wylaczonego zasilania brana jest data zdarzenia poprzedzajacego
+	-- @id_device_data z pewnymi wyjatkami (wykluczone zdarzenia z czasem przeszlym)
+	set @earlier_do_15 = (select top 1 date from partition_view 
+		inner join event_has_time on evb3=id_event
+		where evb2=@car_id and not evb3 in (117,217,85) and id_device_data<@id_device_data
+		order by date desc);
+	if (@earlier_do_15 is not NULL)
+		set @event_start = @earlier_do_15
+	else
+		return @event_stop
+	return @event_start
+END
+
+
+

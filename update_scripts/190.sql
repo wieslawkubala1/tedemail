@@ -1,0 +1,37 @@
+ALTER FUNCTION [dbo].[get_device_data_date] 
+( 
+        @id_device_data bigint, 
+	@evb2 tinyint,  
+	@evb3 tinyint, 
+	@evb5 tinyint, 
+	@evb6 tinyint, 
+	@evb7 tinyint, 
+	@evb8 tinyint, 
+	@year int       
+) 
+RETURNS datetime 
+AS 
+BEGIN 
+        declare @date datetime;         
+        declare @id_event_has_time tinyint; 
+        set @date = NULL; 
+        
+        
+        set @id_event_has_time = (select id_event_has_time from event_has_time where id_event=@evb3); 
+        if (@id_event_has_time is not NULL) 
+        begin 
+                
+                set @date = dbo.event_date(@evb5,@evb6,@evb7,@evb8,@year); 
+        end 
+        else 
+        begin 
+                
+               
+               select top 1 @date=date 
+                        from partition_view 
+                        where evb2=@evb2 and id_device_data<@id_device_data 
+                        order by id_device_data desc; 
+        end 
+	RETURN @date; 
+ 
+END 

@@ -1,0 +1,9 @@
+
+ALTER VIEW [dbo].[view_gps_with_less_10_113_85_49_etc]
+AS
+SELECT     dbo.view_last_gps_device_data.evb2, dbo.view_last_gps_device_data.gps_id_device_data_38, 
+                      dbo.view_last_gps_device_data.gps_id_device_data_39, dbo.device_data.id_device_data AS state_id_device_data
+FROM         dbo.view_last_gps_device_data INNER JOIN
+                      dbo.device_data ON dbo.view_last_gps_device_data.evb2 = dbo.device_data.evb2 AND 
+                      dbo.device_data.id_device_data < dbo.view_last_gps_device_data.gps_id_device_data_39 AND dbo.device_data.evb3 IN (10, 113, 213, 119, 219, 85, 
+                      49, 115)
